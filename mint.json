@@ -49,7 +49,16 @@
     "navigation": [
         {
             "group": "Get Started",
-            "pages": ["introduction", "development"]
+            "pages": ["introduction", "why", "concepts"]
+        },
+        {
+            "group": "Tutorial",
+            "pages": [
+                "tutorial/overview",
+                "tutorial/layer-definitions",
+                "tutorial/provisioning",
+                "tutorial/running"
+            ]
         },
         {
             "group": "Essentials",
