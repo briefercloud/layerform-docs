@@ -1,0 +1,76 @@
+---
+title: "Running the dev infrastructure"
+description: "Learn how to run the development infrastructure for the Elastic Stack using the layer definitions we've created."
+icon: "window"
+---
+
+<div className="flex justify-center items-center">
+    <img src="./images/crocodile-spawn.png" className="w-96" />
+</div>
+
+In this final part of the tutorial you'll learn how to run the dev infrastructure for your Elastic Stack.
+
+For that, you'll need to first learn how to set your CLI context so it know where to pull definitions from. Then, you'll have to run `layerform spawn` to create your environment.
+
+## Configuring your CLI context
+
+Your CLI context is the place it pulls configurations from — the desired back-end.
+
+In the last part of our tutorial, we've used an S3 bucket as the back-end for our layer definitions and state. Therefore, developers in your team should configure their Layerform CLI to pull configurations from that same bucket.
+
+For that, they must update their `configuration.yml` file within the `.layerform` folder in their `home` folder.
+
+```
+$ vim ~/.layerform/configuration.yml
+```
+
+Within that file, you should create a context with the `type` `s3` and give it a name. Then, you should use that name for as the `currentContext`.
+
+```
+currentContext: tutorial-context
+contexts:
+  tutorial-context:
+    type: s3
+    bucket: layerform-bucket-example
+```
+
+After that, your CLI will pull state and layer definitions from the `layerform-bucket-example`, which is the back-end you provisioned in the previous part of the tutorial.
+
+## Running a brand new environment with an Elastic Stack
+
+You can use `layerform spawn elastic_stack my_layer` to spawn an instance of the `elastic_stack` layer whose ID is `my_layer`.
+
+Given the `elastic_stack` layer depends on an instance of the `base` layer, `layerform` will take care of spawning a new one for you because there are no existing instances of the `base` layer. Then, it'll spawn your `elastic_stack` layer.
+
+![](./images/layer_example1.png)
+
+When spawning the first instance of the `base` layer, it'll receive the name `default`, because no other instances of the `base` layer existed before.
+
+Now, if someone else in the team wants to spawn Elasticsearch and Kibana instances, they can run `layerform spawn elastic_stack another_layer` to create an instance of `elastic_stack` whose ID is `another_layer`.
+
+In that case, an instance of the `base` layer with ID `default` will already exist. Therefore, Layerform will spawn the `elastic_stack` layer on top of it.
+
+![](./images/layer_example2.png)
+
+<Note>
+By default, Layerform will attempt to use underlying layers whose ID is `default`.
+
+Whenever an underlying layer with ID `default` does not exist, Layerform will create one and apply the target layer on top of it.
+
+</Note>
+
+## Destroying environments
+
+To destroy your environment, you can use `layerform kill elastic_stack my_layer`. This command will cause Layerform to tear down the instance of the `elastic_stack` layer whose ID is `my_layer`.
+
+![](./images/layer_example3.png)
+
+Now, see what happens when you try to destroy the `base` layer when there's still `another_layer` on top of it. If you try to do that by running `layerform kill base default` you'll see an error.
+
+That error happens because you can only destroy a layer instance when no other instances depend on it.
+
+To actually destroy the `base` layer with ID `default`, you must first destroy `another_layer` running `layerform kill elastic_stack another_layer`.
+
+![](./images/layer_example4.png)
+
+Only then you can run `layerform kill base default`.

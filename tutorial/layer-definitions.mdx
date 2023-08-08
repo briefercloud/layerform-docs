@@ -1,0 +1,419 @@
+---
+title: "Your first layer definitions"
+description: "Create layer definitions for Kubernetes, Elasticsearch, Kibana, and Beats."
+icon: "layer-group"
+---
+
+<div className="flex justify-center items-center">
+    <img src="./images/fox-spawn.png" className="w-96" />
+</div>
+
+In this part of the tutorial you'll learn how to create your first layer definitions.
+
+First, we'll create a base layer definition for our Kubernetes cluster. Then, we'll create a layer definition containing Kibana and Elasticsearch pods to go on top of base layer instances.
+
+## Creating a base layer definition
+
+To create a layer you must first create the Terraform files that belong to it. Then, you must use a `layerform_layer_definition` resource to be able to provision a layer definition.
+
+### Creating the base layer's Terraform files
+
+First, let's create terraform files for an EKS instance (AWS's managed Kubernetes offering).
+
+<Note>
+    By convention, Layerform recommends you to encapsulate each layer into its
+    own [Terraform
+    module](https://developer.hashicorp.com/terraform/language/modules). That
+    way, it's easier to understand each layer's inputs and outputs, and which
+    files belong to it.
+</Note>
+
+Start by creating an `eks` folder within your `terraform` folder. Within that folder, you'll add a `vpc.tf` file.
+
+```
+layerform/
+└─ eks/
+   └─ vpc.tf
+```
+
+This `vpc.tf` file creates a VPC for the EKS cluster you'll add next.
+
+```hcl
+# In eks.tf
+provider "aws" {
+  region = "us-east-1"
+}
+
+# We'll use the `random` resource to create different
+# resource names every time someone spins up a new layer instance
+# That way, we avoid naming conflicts
+resource "random_string" "eks_name" {
+  length  = 8
+  special = false
+}
+
+locals {
+  cluster_name = "preview-eks-${random_string.suffix.result}"
+}
+
+data "aws_availability_zones" "available" {}
+
+# Each cluster will use a VPC like this
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "3.14.2"
+
+  name = "vpc-${random_string.eks_name.result}"
+
+  cidr = "10.0.0.0/16"
+  azs  = slice(data.aws_availability_zones.available.names, 0, 3)
+  map_public_ip_on_launch = false
+
+  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets  = ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]
+
+  enable_nat_gateway   = true
+  single_nat_gateway   = true
+  one_nat_gateway_per_az = false
+
+  enable_dns_hostnames = true
+  enable_dns_support = true
+
+  public_subnet_tags = {
+    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
+    "kubernetes.io/role/elb"                      = 1
+  }
+
+  private_subnet_tags = {
+    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
+    "kubernetes.io/role/internal-elb"             = 1
+  }
+
+  tags = {
+    Environment = "dev"
+    Layerform   = "true"
+  }
+}
+```
+
+Now that you have a VPC, go ahead and create an `eks.tf` file within the `eks` folder.
+
+```
+layerform/
+└─ eks/
+   ├─ vpc.tf
+   └─ eks.tf
+```
+
+This `eks.tf` file will use [the `terraform-aws-modules/eks` module](https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest) to create an EKS instance which uses the VPC in `vpc.tf`.
+
+```hcl
+module "eks" "my_cluster" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "19.0.4"
+
+  cluster_name    = "dev-eks-${random_string.eks_name.result}"
+  cluster_version = "1.25"
+
+  cluster_endpoint_public_access = true
+  cluster_endpoint_private_access = true
+
+  cluster_enabled_log_types = []
+
+  cluster_addons = {
+    coredns = {
+      most_recent = true
+    }
+    kube-proxy = {
+      most_recent = true
+    }
+    vpc-cni = {
+      most_recent = true
+    }
+  }
+
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnets
+
+  enable_irsa = true
+
+  eks_managed_node_group_defaults = {}
+
+  eks_managed_node_groups = {
+    default_pool = {
+      name = "default-pool"
+      ami_type       = "AL2_x86_64"
+      instance_types = ["t2.micro"]
+      min_size     = 1
+      max_size     = 2
+      desired_size = 1
+    }
+  }
+
+  tags = {
+    Environment = "dev"
+    Layerform   = "true"
+  }
+}
+```
+
+Finally, create an `outputs.tf` file to export your cluster's `cluster_id` so that you can use it in the layers above.
+
+```
+layerform/
+└─ eks/
+  ├─ eks.tf
+  ├─ vpc.tf
+  └─ outputs.tf <-- outputs values to be used in the elastic_stack layer
+```
+
+In this `outputs.tf` file, add the HCL code below.
+
+```hcl
+output "cluster_endpoint" {
+  description = "Endpoint for EKS control plane"
+  value       = module.eks.my_cluster.cluster_endpoint
+}
+```
+
+The last thing you must do is add a `eks.tf` file _outside_ the `eks` folder.
+
+```
+layerform/
+├─ eks/
+│ ├─ eks.tf
+│ ├─ vpc.tf
+│ └─ outputs.tf
+└─ eks.tf
+```
+
+In that outer `eks.tf` file, you should declare an instance of the `eks` module.
+
+```hcl
+module "eks" {
+    source = "./modules/eks"
+}
+```
+
+### Creating the base layer's definition
+
+To create a layerform_layer_definition, create a `main.tf` file outside the `layerform` folder. You'll use this file to provision the `layerform_layer_definition` resources using the Layerform provider.
+
+```hcl
+main.tf <--- You'll use this file to provision layers
+layerform/
+├─ eks/
+│ ├─ eks.tf
+│ ├─ vpc.tf
+│ └─ outputs.tf
+└─ eks.tf
+```
+
+Within the `main.tf` file, declare the Layerform provider and add a `layerform_layer_definition` resource for the `base` layer. This layer has a name `base` and a list of files which includes all files within the `eks` folder and the outer `eks.tf` file, which instantiates the module.
+
+```hcl
+provider layerform {}
+
+resource "layerform_layer_definition" "base_layer" {
+  name   = "base"
+  files = ["./eks.tf", "./eks/**"]
+}
+```
+
+Now, run `terraform apply` in the outermost folder to create a layer definition in your machine.
+
+<Note>
+    The file containing the actual layer definition will be saved in the current
+    working directory from which you ran the `terraform apply` command.
+</Note>
+
+## Creating a layer definition for Kibana and Elasticsearch
+
+To create a layer definition for Kibana and Elasticsearch pods, we'll follow a similar process. First, we'll create a Terraform module and a file declaring it. Then, we'll create a `layerform_layer_definition` resource and `terraform apply` it.
+
+### Creating Terraform files for the Kibana and Elasticsearch layer
+
+Start by creating an `inputs.tf` file to receive the EKS `cluster_id` you'll use to configure the Kubernetes provider.
+
+```
+main.tf
+layerform/
+├─ elastic_stack/ <--- Kibana and Elasticsearch terraform files go here
+│ └─ inputs.tf
+├─ eks/
+│ ├─ eks.tf
+│ ├─ vpc.tf
+│ └─ outputs.tf
+└─ eks.tf
+```
+
+Within that file, add a variable for the `cluster_id`.
+
+```hcl
+variable "cluster_id" {
+  description = "The cluster ID in which these pods will be provisioned"
+  type        = string
+}
+```
+
+Now, create a `providers.tf` file and configure [the `kubernetes` provider](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs) to connect to the cluster whose `cluster_id` you will receive as an input.
+
+```
+main.tf
+layerform/
+├─ elastic_stack/
+│ ├─ providers.tf <--- the k8s provider goes here
+│ └─ inputs.tf
+├─ eks/
+│ ├─ eks.tf
+│ ├─ vpc.tf
+│ └─ outputs.tf
+└─ eks.tf
+```
+
+Within that file, add the data-source for the EKS cluster and instantiate the provider.
+
+```hcl
+data "aws_eks_cluster_auth" "cluster" {
+  name = module.eks.my_cluster.cluster_id
+}
+
+provider "kubernetes" {
+  host                   = data.aws_eks_cluster.cluster.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority[0].data)
+  token                  = data.aws_eks_cluster_auth.cluster.token
+}
+```
+
+Then, create a `pods.tf` file in which you'll create a namespace for the Kibana and Elasticsearch pods and the pods themselves.
+
+```
+main.tf
+layerform/
+├─ elastic_stack/
+│ ├─ pods.tf <--- your namespace and pods go here
+│ ├─ providers.tf
+│ └─ inputs.tf
+├─ eks/
+│ ├─ eks.tf
+│ ├─ vpc.tf
+│ └─ outputs.tf
+└─ eks.tf
+```
+
+To create the namespace and pods, you'll use the `kubernetes_namespace` and `kubernetes_pod` resources, as shown below.
+
+```hcl
+resource "random_string" "namespace_suffix" {
+  length  = 8
+  special = false
+}
+
+resource "kubernetes_namespace" "elastic_stack" {
+  metadata {
+    name = "elastic-stack-${namespace_suffix}"
+  }
+}
+
+resource "kubernetes_pod" "elasticsearch" {
+  metadata {
+    name      = "elasticsearch"
+    namespace = kubernetes_namespace.elastic_stack.metadata[0].name
+
+    labels = {
+      app = "elasticsearch"
+    }
+  }
+
+  spec {
+    container {
+      image = "docker.elastic.co/elasticsearch/elasticsearch:7.17.0"
+
+      env {
+        name  = "discovery.type"
+        value = "single-node"
+      }
+    }
+  }
+}
+
+resource "kubernetes_pod" "kibana" {
+  metadata {
+    name      = "kibana"
+    namespace = kubernetes_namespace.kibana.metadata[0].name
+
+    labels = {
+      app = "kibana"
+    }
+  }
+
+  spec {
+    container {
+      image = "docker.elastic.co/kibana/kibana:7.10.1"
+
+      env {
+        name  = "ELASTICSEARCH_URL"
+        value = "http://elasticsearch.${kubernetes_namespace.elastic_stack.metadata[0].name}:9200"
+      }
+    }
+  }
+}
+```
+
+Finally, you should go ahead and create an `elastic_stack.tf` file in the `layerform` folder which declares the module passing the necessary `cluster_id` variables to it.
+
+```
+main.tf
+layerform/
+├─ elastic_stack/
+│ ├─ pods.tf
+│ ├─ providers.tf
+│ └─ inputs.tf
+├─ eks/
+│ ├─ eks.tf
+│ ├─ vpc.tf
+│ └─ outputs.tf
+├─ elastic_stack.tf <--- declare the `elastic_stack` module here
+└─ eks.tf
+```
+
+Within that module, you'll use the output `cluster_id` from `eks` as an `input` to the `elastic_stack` module.
+
+```hcl
+module "elastic_stack" {
+    source = "./modules/elastic_stack"
+    cluster_id = modules.eks.cluster_id
+}
+```
+
+<Note>
+The `elastic_stack` layer will go on top of the `base` layer. Therefore, it's fine for `elastic_stack` to use values belonging to the Terraform files of the `base` layer below, like `modules.eks.cluster_id`.
+
+On the other hand, you _can't_ use values from layers above in the layers below. The `base` layer couldn't reference values belonging to Terraform files of the `elastic_stack` layer, for example.
+
+</Note>
+
+### Creating the actual layer definition for Kibana and Elasticsearch
+
+Within the existing `main.tf` file, add a `layerform_layer_definition` resource for the `elastic_stack` layer. This layer has the name `elastic_stack` and a list of files which includes all files within the `elastic_stack` folder and the outer `elastic_stack.tf` file, which instantiates the module. This resource should also include a list of dependencies in which you specify that any instances of the `elastic_stack` layer depend on an instance of the `base` layer.
+
+```hcl
+provider layerform {}
+
+resource "layerform_layer_definition" "base_layer" {
+  name   = "base"
+  files = ["./eks.tf", "./eks/**"]
+}
+
+resource "layerform_layer_definition" "elastic_stack" {
+  name   = "elastic_stack"
+  files = ["./elastic_stack.tf", "./elastic_stack/**"]
+  dependencies = [base_layer.name]
+}
+```
+
+Finally, run `terraform apply` again to update your `json` file with layer definitions so that it includes the `elastic_stack` layer definition.
+
+## Testing your Terraform files
+
+The files you just created are just plain Terraform files. Therefore, they should work just fine if you use `terraform apply` within the `layerform folder` — as long as you have also run `terraform init`.
