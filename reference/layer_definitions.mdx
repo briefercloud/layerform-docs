@@ -1,0 +1,76 @@
+---
+title: "Layer definitions"
+description: "Learn what are layer definitions and how they work."
+icon: "layer-group"
+---
+
+<div className="flex justify-center items-center">
+    <img src="./images/bear-spawn.png" className="w-96" />
+</div>
+
+A layer definition is an entry in a JSON object. This entry includes a name, a list of dependencies, and the contents of the Terraform files Layerform will use to spawn infrastructure.
+
+<Note>
+_Layer definitions_ and _layer definition resources_ are two different concepts.
+
+A _layer definition resource_ is the Terraform resource the Layerform provider uses to create an actual _layer definition_.
+
+</Note>
+
+## Creating layer definitions
+
+To create a layer definition, you need to start by using the `layerform_layer_definition` Terraform resource in the Layerform provider.
+
+```hcl
+provider "layerform" {}
+
+resource "layerform_layer_definition" "base_layer" {
+  name   = "base"
+  files = ["./eks.tf", "./eks/**"]
+}
+
+resource "layerform_layer_definition" "elastic_stack" {
+  name   = "elastic_stack"
+  files = ["./elastic_stack.tf", "./elastic_stack/**"]
+  dependencies = [base_layer.name]
+}
+```
+
+Each of these resources takes a `name`, a list of `files`, and may take a list of `dependencies`.
+
+Here's what each input does:
+
+1. `name`: an unique name for this layer definition. You'll use this name in the CLI to spawn instances of this layer definition.
+2. `files`: a list of Terraform files included in this layer. Layerform will run these files to provision infrastructure for an instance of this layer definition.
+3. `dependencies`: a list layer definition names upon which instances of the current layer will be placed.
+
+**Once you have a `layerform_layer_definition` resource, you should run `terraform apply` to actually create the layer definition entry in the JSON object in your Layerform back-end.**
+
+<Note>
+    By default, Layerform uses the local filesystem as its back-end. [See this
+    page to learn more about Layerform back-ends](./backends).
+</Note>
+
+## Using layer definitions
+
+Layer definitions are used by the Layerform CLI so it knows which Terraform files to run to create a layer instance. Layerform also looks at the `dependencies` list to fetch state for any underlying layers.
+
+To use a layer definition, you must configure your CLI with the back-end containing the desired definition. For that, you must edit the `configurations.yml` file within `~/.layerform`.
+
+In that file, you should configure a context with the desired type and its settings. Then, you should set `currentContext to the desired context's name.
+
+```yaml
+currentContext: tutorial-context
+contexts:
+    tutorial-context:
+        type: s3
+        bucket: layerform-bucket-example
+```
+
+After that, you can spawn layers using `layerform spawn <layer_definition_name> <desired_id>`. The `layerform spawn` command will pull the matching definition from the specified context and run its Terraform files.
+
+## Updating or deleting layer definitions
+
+To update a layer definition, you must update the Terraform files associated with it and run `terraform apply` again. That will cause the Layerform provider to update the back-end with your updated files.
+
+To delete a particular layer definition, you can simply remove the corresponding `layerform_layer_definition` resource from your Terraform file and run `terraform apply` again.

@@ -1,7 +1,6 @@
 ---
 title: "Running the dev infrastructure"
 description: "Learn how to run the development infrastructure for the Elastic Stack using the layer definitions we've created."
-icon: "window"
 ---
 
 <div className="flex justify-center items-center">
@@ -26,12 +25,12 @@ $ vim ~/.layerform/configuration.yml
 
 Within that file, you should create a context with the `type` `s3` and give it a name. Then, you should use that name for as the `currentContext`.
 
-```
+```yaml
 currentContext: tutorial-context
 contexts:
-  tutorial-context:
-    type: s3
-    bucket: layerform-bucket-example
+    tutorial-context:
+        type: s3
+        bucket: layerform-bucket-example
 ```
 
 After that, your CLI will pull state and layer definitions from the `layerform-bucket-example`, which is the back-end you provisioned in the previous part of the tutorial.

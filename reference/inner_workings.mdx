@@ -1,0 +1,51 @@
+---
+title: "Inner workings"
+description: "Learn how Layerform uses Terraform files and states to spin up infrastructure using layers."
+icon: "circle-stack"
+---
+
+<div className="flex justify-center items-center">
+    <img src="./images/tiger-spawn.png" className="w-96" />
+</div>
+
+In this page, you'll learn how Layerform works.
+
+## Stage 0: Provisioning
+
+When using Layerform, the first step is to group Terraform files into layers definitions and specify names and a list of dependencies for each of those definitions.
+
+After that, you should provision a back-end with those definitions so that Layerform CLI users can have access to them.
+
+The back-ends store these definitions in JSON format.
+
+## Stage 1: Fetching definitions
+
+Whenever you try to spawn a layer instance, Layerform will download the corresponding layer definition and check whether there are any dependencies necessary for spawning the desired layer instance.
+
+If the target layer has dependencies, Layerform will look for those dependencies' definitions too. It will do so recursively, meaning it will find definitions for all dependencies, until there are no more dependencies left.
+
+## Stage 2: Fetching state
+
+After fetching definitions for the target layer and all its dependencies, Layerform will look for the state of the underlying layers it needs to use.
+
+Assume you want to spawn a `services` layer on top of a `k8s` layer whose ID is `default`, for example. In that case, Layerform will fetch the state for the `default` instance of `k8s`.
+
+After fetching the state for all dependencies, Layerform will merge the state of all these dependencies.
+
+## Stage 3: Applying Terraform files
+
+Once it has the state of all underlying layers, Layerform will concatenate the Terraform files for all layers and run them all.
+
+That way, Layerform will reuse the state for the underlying layers from the previous step. However, it will still spawn a brand new instance of the target layer because it wasn't present in the state file used for applying the Terraform files.
+
+<Note>
+    If an underlying layer does not exist it won't be present in the
+    concatenated state. Therefore, Layerform will create a piece of state for
+    that new underlying layer and save it as `default`.
+</Note>
+
+## Stage 4: Updating states
+
+Once it has created all the necessary layers, Layerform will save the updated pieces of state separately into the back-end. That way, future users will be able to spin up new layers on top of existing infrastructure, and Layerform will know what already exists and what doesn't.
+
+Layerform will also delete pieces of state when users kill the corresponding layer instances.

@@ -1,0 +1,59 @@
+---
+title: "CLI Configs"
+description: "Learn how to configure your Layerform CLI."
+icon: "cog-6-tooth"
+---
+
+<div className="flex justify-center items-center">
+    <img src="./images/rabbit-spawn.png" className="w-96" />
+</div>
+
+Before using the Layerform CLI, you must configure it so it knows where to pull state and layer definitions from.
+
+For that, you must edit the `configuration.yml` file in the `.layerform` folder within your `home` folder.
+
+In that `configuration.yml` file you'll be able to add entries for contexts. Those contexts are the possible [Layerform back-ends](./backends) from which the CLI will pull state and layer definitions.
+
+Each entry has a `type` and configurations specific to each type of back-end.
+
+For example, to configure an S3 back-end you'd use a configuration similar to the one below.
+
+```yaml
+currentContext: example-context
+contexts:
+    example-context:
+        type: s3
+        bucket: layerform-bucket-example
+```
+
+This configuration allows your CLI to pull state and definitions fro the `s3` bucket called `layerform-bucket-example`. That way, your whole team can work together to create and update layer definitions, and share certain core parts of your infrastructure.
+
+<Note>
+    You must configure your desired S3 bucket so that all engineers using
+    Layerform can read and write to it. Otherwise, they won't be able to read
+    state and layer definitions, and won't be able to update state whenever they
+    spin up new layer instances.
+</Note>
+
+### Configuring a local back-end
+
+If you're just getting started, you can use a local back-end to test Layerform on your own.
+
+The `local` back-end will point Layerform to store state and layer definitions in your own filesystem.
+
+To configure a `local` back-end, you must use the `local` context type and set a directory through the `dir` key. Layerform will then use the path in `dir` to store state and layer definitions.
+
+```yaml
+currentContext: my-local-context
+contexts:
+    my-local-context:
+        type: local
+        dir: /Users/someone/project/layerform-backend
+```
+
+<Warning>
+We don't recommend using local back-ends in a team context because state and layer definitions won't be automatically synced across different team members. Instead, they'll leave on each engineer's local filesystem.
+
+You should only use a `local` back-end for testing and individual use.
+
+</Warning>

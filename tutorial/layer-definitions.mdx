@@ -1,7 +1,6 @@
 ---
-title: "Your first layer definitions"
+title: "Creating layer definitions"
 description: "Create layer definitions for Kubernetes, Elasticsearch, Kibana, and Beats."
-icon: "layer-group"
 ---
 
 <div className="flex justify-center items-center">
@@ -197,7 +196,7 @@ module "eks" {
 
 ### Creating the base layer's definition
 
-To create a layerform_layer_definition, create a `main.tf` file outside the `layerform` folder. You'll use this file to provision the `layerform_layer_definition` resources using the Layerform provider.
+To create a `layerform_layer_definition`, create a `main.tf` file outside the `layerform` folder. You'll use this file to provision the `layerform_layer_definition` resources using the Layerform provider.
 
 ```hcl
 main.tf <--- You'll use this file to provision layers
@@ -212,7 +211,7 @@ layerform/
 Within the `main.tf` file, declare the Layerform provider and add a `layerform_layer_definition` resource for the `base` layer. This layer has a name `base` and a list of files which includes all files within the `eks` folder and the outer `eks.tf` file, which instantiates the module.
 
 ```hcl
-provider layerform {}
+provider "layerform" {}
 
 resource "layerform_layer_definition" "base_layer" {
   name   = "base"
@@ -398,7 +397,7 @@ On the other hand, you _can't_ use values from layers above in the layers below.
 Within the existing `main.tf` file, add a `layerform_layer_definition` resource for the `elastic_stack` layer. This layer has the name `elastic_stack` and a list of files which includes all files within the `elastic_stack` folder and the outer `elastic_stack.tf` file, which instantiates the module. This resource should also include a list of dependencies in which you specify that any instances of the `elastic_stack` layer depend on an instance of the `base` layer.
 
 ```hcl
-provider layerform {}
+provider "layerform" {}
 
 resource "layerform_layer_definition" "base_layer" {
   name   = "base"
