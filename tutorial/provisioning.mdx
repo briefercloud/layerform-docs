@@ -4,7 +4,7 @@ description: "Provision an S3 back-end with the Elastic Stack layer definitions 
 ---
 
 <div className="flex justify-center items-center">
-    <img src="./images/cat-spawn.png" className="w-96" />
+    <img src="/images/cat-spawn.png" className="w-96" />
 </div>
 
 In this page you'll learn what it means to "provision" a Layerform back-end and how to provision an S3 bucket with layer definitions. That way, everyone in your team will be able to use your layer definitions to spin up environments.
@@ -13,13 +13,13 @@ In this page you'll learn what it means to "provision" a Layerform back-end and 
 
 Every time you _provision_ a Layerform back-end, you'll generate a `json` file containing the name of each layer, its dependencies and contents (Terraform files). The process of generating this file and moving it somewhere is called _provisioning_.
 
-![](./images/backend-process.png)
+![](/images/backend-process.png)
 
 In the previous part of this tutorial, you have already provisioned a Layerform back-end with layer definitions. In that case, you used the `local` back-end (your filesystem) to store the `json` file with the actual layer definitions.
 
 The problem with using the `local` back-end to store layer definitions is that you're the only one who can use those definitions to create an environment. If you want _everyone_ in your team to be able to use your layer definitions, you must use a remote back-end, like an S3 bucket.
 
-![](./images/backend-pull.png)
+![](/images/backend-pull.png)
 
 ## Provisioning an S3 bucket
 

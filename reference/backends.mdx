@@ -5,7 +5,7 @@ icon: "boxes-packing"
 ---
 
 <div className="flex justify-center items-center">
-    <img src="./images/platypus-spawn.png" className="w-96" />
+    <img src="/images/platypus-spawn.png" className="w-96" />
 </div>
 
 A Layerform back-end is where Layerform stores layer definitions and the states for each layer instance.
@@ -50,7 +50,7 @@ resource "layerform_layer_definition" "base_layer" {
 
 Once you run `terraform apply` on a `layerform_layer_definition` resource, Layerform will take care of generating the JSON layer definition files for you, and uploading them to your bucket.
 
-![](./images/backend-process.png)
+![](/images/backend-process.png)
 
 ## Using (Usage Step)
 
@@ -58,7 +58,7 @@ Users directly interface with the back-end when they run `layerform spawn` and `
 
 Those commands cause the Layerform CLI to fetch state and layer definitions from the back-end so it knows which Terraform files to run.
 
-![](./images/backend-pull.png)
+![](/images/backend-pull.png)
 
 After running the Terraform files necessary to create an instance of the desired layer definition, Layerform will upload the updated layer state to your back-end.
 
