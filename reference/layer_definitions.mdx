@@ -51,6 +51,88 @@ Here's what each input does:
     page to learn more about Layerform back-ends](./backends).
 </Note>
 
+### Creating Terraform files for layer definitions
+
+**By convention, you should encapsulate your layer definitions' Terraform files into [Terraform modules](https://developer.hashicorp.com/terraform/language/modules).**
+
+Encapsulating layer definitions into modules makes it easier to understand which files belong to each layer.
+
+For example, if you have an `elastic_stack` layer, you'd have `kibana.tf` and `elasticsearch.tf` files within a folder called `elastic_stack`. That folder would also have any necessary inputs and outputs in `inputs.tf` and `outputs.tf` files.
+
+```
+layerform/
+└─ elastic_stack/
+    ├─ elasticsearch.tf
+    ├─ kibana.tf
+    ├─ inputs.tf
+    └─ outputs.tf
+```
+
+Don't forget to also create an entry-point instantiating your module.
+
+```
+layerform/
+├─ elastic_stack/
+│   ├─ elasticsearch.tf
+│   ├─ kibana.tf
+│   ├─ inputs.tf
+│   └─ outputs.tf
+└─ entrypoint.tf <--- uses the module elastic_stack
+```
+
+This entrypoint should instantiate the module and pass the necessary inputs to it.
+
+```hcl
+module "elastic_stack" {
+    source = "./modules/elastic_stack"
+    cluster_id = modules.eks.cluster_id
+}
+```
+
+Then, when creating the `layerform_layer_definition` resource, make sure to include both the entrypoint and all the files in the module's folder.
+
+```hcl
+resource "layerform_layer_definition" "elastic_stack" {
+  name   = "elastic_stack"
+  files = ["./elastic_stack.tf", "./elastic_stack/**"]
+}
+```
+
+### Using variables across layer definitions
+
+When using layer definitions, keep in mind that you can reference variables from another definition if, and only if, the reference variable belongs to the layer _below_.
+
+For example, it's fine if your `elastic_stack` layer must take an `input` which comes from the `eks` module which is part of the underlying `eks` layer.
+
+```hcl
+module "elastic_stack" {
+    source = "./modules/elastic_stack"
+
+    # This cluster_id reference comes from a file which
+    # belongs to the underlying `eks` layer. That's fine.
+    cluster_id = modules.eks.cluster_id
+}
+```
+
+On the other hand, it's not fine if your `eks` layer references values from the `elastic_stack` layer on top of it.
+
+```hcl
+# This code won't work
+module "eks" {
+    source = "./modules/eks"
+
+    # This is NOT fine! Here, the reference comes from the
+    # elastic_stack layer on *top*. Which won't be available.
+    cluster_id = modules.elastic_stack.elasticsearch_url
+}
+```
+
+<Tip>
+    Encapsulating layers into modules makes it easier to understand whether
+    you're referencing values in the layers below, above, or next to the target
+    layer.
+</Note>
+
 ## Using layer definitions
 
 Layer definitions are used by the Layerform CLI so it knows which Terraform files to run to create a layer instance. Layerform also looks at the `dependencies` list to fetch state for any underlying layers.
