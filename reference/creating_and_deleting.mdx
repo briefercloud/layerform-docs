@@ -5,7 +5,7 @@ icon: "square-terminal"
 ---
 
 <div className="flex justify-center items-center">
-    <img src="/images/bull-spawn.png" className="w-96" />
+    <img src="../images/bull-spawn.png" className="w-96" />
 </div>
 
 Whenever an engineer wants to create an environment for themselves, they `spawn` a layer instance. That layer instance is based off of a layer definition previously provisioned to [a Layerform back-end](./backends).
@@ -38,7 +38,7 @@ $ layerform spawn services example --base "k8s=first"
 
 That command will run the `example` layer for `services` on top of the `k8s` layer instance whose id is `first`. It will also use the `sqs` layer instance whose ID is `default` because an ID was not specified for `sqs`.
 
-![](/images/multilayers-example.png)
+![](../images/multilayers-example.png)
 
 To specify an ID for both the `k8s` and `sqs` layers, use `k8s=first,sqs=second` as an argument to `--base`, as shown in the command below.
 
@@ -48,7 +48,7 @@ $ layerform spawn services example --base "k8s=first,sqs=second"
 
 This command will cause Layerform to use the instance for `k8s` whose ID is `first` and the instance for `sqs` whose ID is `second`.
 
-![](/images/all-named-layers-example.png)
+![](../images/all-named-layers-example.png)
 
 <Note>
     Whenever an underlying layer instance with the specified ID does not exist,

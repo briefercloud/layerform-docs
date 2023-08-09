@@ -4,7 +4,7 @@ description: "Learn how to run the development infrastructure for the Elastic St
 ---
 
 <div className="flex justify-center items-center">
-    <img src="/images/crocodile-spawn.png" className="w-96" />
+    <img src="../images/crocodile-spawn.png" className="w-96" />
 </div>
 
 In this final part of the tutorial you'll learn how to run the dev infrastructure for your Elastic Stack.
@@ -41,7 +41,7 @@ You can use `layerform spawn elastic_stack my_layer` to spawn an instance of the
 
 Given the `elastic_stack` layer depends on an instance of the `base` layer, `layerform` will take care of spawning a new one for you because there are no existing instances of the `base` layer. Then, it'll spawn your `elastic_stack` layer.
 
-![](/images/layer_example1.png)
+![](../images/layer_example1.png)
 
 When spawning the first instance of the `base` layer, it'll receive the name `default`, because no other instances of the `base` layer existed before.
 
@@ -49,7 +49,7 @@ Now, if someone else in the team wants to spawn Elasticsearch and Kibana instanc
 
 In that case, an instance of the `base` layer with ID `default` will already exist. Therefore, Layerform will spawn the `elastic_stack` layer on top of it.
 
-![](/images/layer_example2.png)
+![](../images/layer_example2.png)
 
 <Note>
 By default, Layerform will attempt to use underlying layers whose ID is `default`.
@@ -62,7 +62,7 @@ Whenever an underlying layer with ID `default` does not exist, Layerform will cr
 
 To destroy your environment, you can use `layerform kill elastic_stack my_layer`. This command will cause Layerform to tear down the instance of the `elastic_stack` layer whose ID is `my_layer`.
 
-![](/images/layer_example3.png)
+![](../images/layer_example3.png)
 
 Now, see what happens when you try to destroy the `base` layer when there's still `another_layer` on top of it. If you try to do that by running `layerform kill base default` you'll see an error.
 
@@ -70,6 +70,6 @@ That error happens because you can only destroy a layer instance when no other i
 
 To actually destroy the `base` layer with ID `default`, you must first destroy `another_layer` running `layerform kill elastic_stack another_layer`.
 
-![](./images/layer_example4.png)
+![](../images/layer_example4.png)
 
 Only then you can run `layerform kill base default`.
