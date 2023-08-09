@@ -35,18 +35,14 @@ Follow along and learn how to provision infrastructure layers using Layerform. E
 In this tutorial, we'll create layers for running the Elastic Stack (Elasticsearch, Kibana, and Beats) on top of Kubernetes.
 
 <CardGroup cols={2}>
-    <Card
-        title="Tutorial overview"
-        icon="map"
-        href="https://mintlify.com/docs/quickstart"
-    >
+    <Card title="Tutorial overview" icon="map" href="/tutorial/overview">
         Understand how we'll use Layerform to create development environments
         for the Elastic Stack and learn about the advantages of using layers.
     </Card>
     <Card
         title="Your first layer definitions"
         icon="layer-group"
-        href="https://mintlify.com/docs/quickstart"
+        href="/tutorial/layer-definitions"
     >
         Create layer definitions for Kubernetes, Elasticsearch, Kibana, and
         Beats.
@@ -54,47 +50,52 @@ In this tutorial, we'll create layers for running the Elastic Stack (Elasticsear
     <Card
         title="Provisioning your first layer definitions"
         icon="cloud-arrow-up"
-        href="https://mintlify.com/docs/development"
+        href="/tutorial/provisioning"
     >
         Provision an S3 back-end with the Elastic Stack layer definitions so
         that developers can use them to spin up development environments later.
     </Card>
     <Card
-        title="Using layers to run the Elastic Stack dev infrastructure"
+        title="Running the dev infrastructure"
         icon="window"
-        href="https://mintlify.com/docs/development"
+        href="/tutorial/running"
     >
         Learn how to run the development infrastructure for the Elastic Stack
         using the layer definitions we've created.
     </Card>
 </CardGroup>
 
-## Setting up
+## Reference
 
-Learn how to configure layer definitions and use the Layerform CLI to spin layers up.
+Read about the different parts of Layerform and how it works.
 
 <CardGroup cols={2}>
     <Card
-        title="Creating layer definitions"
+        title="Layer definitions"
         icon="pen-to-square"
-        href="https://mintlify.com/docs/quickstart"
+        href="/reference/layer_definitions"
     >
-        Learn how to specify the infrastructure content of each layer and
-        determine their dependencies.
+        Learn what are layer definitions and how they work..
     </Card>
     <Card
-        title="Provisioning layer definitions"
+        title="Back-ends and provisioning"
         icon="cloud-arrow-up"
-        href="https://mintlify.com/docs/development"
+        href="/reference/backends"
     >
-        Learn what's a Layerform back-end and learn how to provision it with
-        layer definitions for others to use.
+        Learn what is a Layerform back-end and how to use and provision them.
     </Card>
     <Card
-        title="Creating a development infrastructure using layers"
+        title="Spawning and killing layers"
         icon="window"
-        href="https://mintlify.com/docs/development"
+        href="/reference/creating_and_deleting"
     >
-        Learn how to spin up your own development infrastructure using layers.
+        Learn how to spawn new layer instances or kill existing ones.
+    </Card>
+    <Card title="CLI Configs" icon="window" href="/reference/cli_configs">
+        Learn how to configure your Layerform CLI.
+    </Card>
+    <Card title="Inner workings" icon="window" href="/reference/cli_configs">
+        Learn how Layerform uses Terraform files and states to spin up
+        infrastructure using layers.
     </Card>
 </CardGroup>
