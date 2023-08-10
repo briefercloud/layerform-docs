@@ -33,8 +33,9 @@ To provision a back-end, you must first specify the desired back-end when defini
 ```hcl
 provider "layerform" {
     backend {
-        type = "s3"
+        type   = "s3"
         bucket = "layerform-bucket-example"
+        region = "us-east-1"
     }
 }
 ```
@@ -76,6 +77,7 @@ contexts:
     remote-context:
         type: s3
         bucket: layerform-bucket-example
+        region: us-east-1
 ```
 
 <Warning>
@@ -98,4 +100,5 @@ contexts:
     remote-context:
         type: s3
         bucket: layerform-bucket-example
+        region: us-east-1
 ```

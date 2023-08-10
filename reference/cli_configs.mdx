@@ -24,6 +24,7 @@ contexts:
     example-context:
         type: s3
         bucket: layerform-bucket-example
+        region: us-east-1
 ```
 
 This configuration allows your CLI to pull state and definitions fro the `s3` bucket called `layerform-bucket-example`. That way, your whole team can work together to create and update layer definitions, and share certain core parts of your infrastructure.
