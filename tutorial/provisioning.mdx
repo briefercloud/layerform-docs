@@ -28,8 +28,9 @@ To provision an S3 bucket, you must update the Layerform provider configuration 
 ```hcl
 provider "layerform" {
     backend {
-        type = "s3"
+        type   = "s3"
         bucket = "layerform-bucket-example"
+        region = "us-east-1"
     }
 }
 
