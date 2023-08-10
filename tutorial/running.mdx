@@ -23,10 +23,10 @@ Your CLI context is the place it pulls configurations from — the desired back-
 
 In the last part of our tutorial, we've used an S3 bucket as the back-end for our layer definitions and state. Therefore, developers in your team should configure their Layerform CLI to pull configurations from that same bucket.
 
-For that, they must update their `configuration.yml` file within the `.layerform` folder in their `home` folder.
+For that, they must update their `config.yaml` file within the `.layerform` folder in their `home` folder.
 
 ```
-$ vim ~/.layerform/configuration.yml
+$ vim ~/.layerform/config.yaml
 ```
 
 Within that file, you should create a context with the `type` `s3` and give it a name. Then, you should use that name for as the `currentContext`.
