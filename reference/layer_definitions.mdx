@@ -137,7 +137,7 @@ module "eks" {
 
 Layer definitions are used by the Layerform CLI so it knows which Terraform files to run to create a layer instance. Layerform also looks at the `dependencies` list to fetch state for any underlying layers.
 
-To use a layer definition, you must configure your CLI with the back-end containing the desired definition. For that, you must edit the `configurations.yml` file within `~/.layerform`.
+To use a layer definition, you must configure your CLI with the back-end containing the desired definition. For that, you must edit the `config.yaml` file within `~/.layerform`.
 
 In that file, you should configure a context with the desired type and its settings. Then, you should set `currentContext to the desired context's name.
 
