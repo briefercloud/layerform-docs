@@ -28,6 +28,48 @@ By using an `s3` back-end you enable your whole team to fetch the definitions yo
 
 ## Provisioning (Configuration Step)
 
+To provision a back-end, you must first specify the desired back-end in your `config.yml` file in the `~/.layerform` folder.
+
+```yaml
+currentContext: example-context
+contexts:
+    example-context:
+        type: s3
+        bucket: layerform-bucket-example
+        region: us-east-1
+```
+
+Then you should define layers using a `layers.json` file. This file has definitions for each layer, as shown below.
+
+```json
+{
+    "layers": [
+        {
+            "name": "your_layer_name",
+            "files": [
+                "layers/example.tf",
+                "layers/example/main.tf",
+                "layers/example/input.tf",
+                "layers/example/output.tf",
+                "layers/example/variables.tf"
+            ],
+            "dependencies": ["base_layer"]
+        }
+    ]
+}
+```
+
+Now, run `layerform configure` to provision these layers to your S3 bucket.
+
+<Warning>
+Please create a bucket exclusively for Layerform when using an S3 bucket as a back-end.
+
+Layerform should always have its own bucket for storing layer states and definitions. Otherwise, it may overwrite existing files.
+
+</Warning>
+
+## Provisioning using a provider (Configuration Step)
+
 To provision a back-end, you must first specify the desired back-end when defining the Layerform provider in your Terraform file.
 
 ```hcl
