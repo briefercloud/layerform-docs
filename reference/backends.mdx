@@ -61,39 +61,14 @@ Then you should define layers using a `layers.json` file. This file has definiti
 
 Now, run `layerform configure` to provision these layers to your S3 bucket.
 
+![](../images/backend-pull.png)
+
 <Warning>
 Please create a bucket exclusively for Layerform when using an S3 bucket as a back-end.
 
 Layerform should always have its own bucket for storing layer states and definitions. Otherwise, it may overwrite existing files.
 
 </Warning>
-
-## Provisioning using a provider (Configuration Step)
-
-To provision a back-end, you must first specify the desired back-end when defining the Layerform provider in your Terraform file.
-
-```hcl
-provider "layerform" {
-    backend {
-        type   = "s3"
-        bucket = "layerform-bucket-example"
-        region = "us-east-1"
-    }
-}
-```
-
-After configuring the desired back-end, you can run Terraform apply to create a `layerform_layer_definition` resource in that back-end.
-
-```hcl
-resource "layerform_layer_definition" "base_layer" {
-  name   = "base"
-  files = ["./eks.tf", "./eks/**"]
-}
-```
-
-Once you run `terraform apply` on a `layerform_layer_definition` resource, Layerform will take care of generating the JSON layer definition files for you, and uploading them to your bucket.
-
-![](../images/backend-process.png)
 
 ## Using (Usage Step)
 

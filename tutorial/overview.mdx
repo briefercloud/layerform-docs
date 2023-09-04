@@ -21,7 +21,9 @@ By the end of this tutorial, each developer in your team should be able to creat
 
 Assume you work at a company developing products on top of Elasticsearch.
 
-In most companies, you'd have a single "staging" environment with a large Kubernetes cluster, quite a few instances of Elasticsearch and Kibana.
+In most companies, you'd have a single "staging" environment with a large Kubernetes cluster and an instance of Elasticsearch and Kibana.
+
+![](../images/single-cluster.png)
 
 Whenever a developer in your company wants to test a new feature, they'd have to merge their code to `main` and deploy it to "staging" so they could test it in a production-like environment. Then, if there are bugs, developers would have to rush and do a lot of rework to fix `main`, which would now be broken.
 
@@ -34,3 +36,14 @@ Workers, for example, would be a nightmare because developers' workers would be 
 That's not to mention all the problems related with residual and messy data that will remain in `staging`.
 
 **Layerform solves all of these problems by allowing each developer to create their own "staging"**. In each "staging", developers would have their own Elastic Stack, and any other services they may need. That way, developers' changes and tests won't interfere with one another.
+
+![](../images/multi-dev-cluster.png)
+
+Additionally, you could use Layerform within a GitHub workflow to generate preview links for each of your pull requests. These previews support _any_ infrastructure, and can run on top of a shared Kubernetes cluster.
+
+![](../images/preview-link-layerform.png)
+
+<Note>
+    For more details on layer use-cases, see [this
+    document](https://github.com/ergomake/layerform/blob/main/blog/breaking-terraform-into-layers.md).
+</Note>

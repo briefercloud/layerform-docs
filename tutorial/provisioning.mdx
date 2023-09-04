@@ -11,19 +11,17 @@ In this page you'll learn what it means to "provision" a Layerform back-end and 
 
 ## What is "provisioning"?
 
-Every time you _provision_ a Layerform back-end, you'll generate a `json` file containing the name of each layer, its dependencies and contents (Terraform files). The process of generating this file and moving it somewhere is called _provisioning_.
+Every time you _provision_ a Layerform back-end, you'll upload a `json` file containing the name of each layer, its dependencies and contents (Terraform files). The term _provisioning_ refers to the act of uploading the definition file and the Terraform files it refers to.
 
 ![](../images/backend-process.png)
 
-In the previous part of this tutorial, you have already provisioned a Layerform back-end with layer definitions. In that case, you used the `local` back-end (your filesystem) to store the `json` file with the actual layer definitions.
+In the previous part of this tutorial, you have already provisioned a local Layerform back-end with layer definitions. In that case, you used the `local` back-end (your filesystem) to store the `json` file with the layer definitions.
 
 The problem with using the `local` back-end to store layer definitions is that you're the only one who can use those definitions to create an environment. If you want _everyone_ in your team to be able to use your layer definitions, you must use a remote back-end, like an S3 bucket.
 
 ![](../images/backend-pull.png)
 
-## Using the JSON format
-
-The official `layerform-provider` is not yet available. For now, you'll have to use the JSON format to configure layer definitions.
+## Provisioning an S3 bucket
 
 To define layers, you should create a `layers.json` file and use the format below.
 
@@ -31,21 +29,19 @@ To define layers, you should create a `layers.json` file and use the format belo
 {
     "layers": [
         {
-            "name": "your_layer_name",
-            "files": [
-                "layers/example.tf",
-                "layers/example/main.tf",
-                "layers/example/input.tf",
-                "layers/example/output.tf",
-                "layers/example/variables.tf"
-            ],
-            "dependencies": ["base_layer"]
+            "name": "base_example",
+            "files": ["layers/base.tf", "layers/base/**"]
+        },
+        {
+            "name": "your_top_layer",
+            "files": ["layers/example.tf", "layers/example/**"],
+            "dependencies": ["base_example"]
         }
     ]
 }
 ```
 
-After creating a JSON file like this, configure the Layerform CLI using the `config.yml` file in the `~/.layerform` directory.
+After creating a JSON file like this, configure the Layerform CLI to use a remote S3 bucket by writing to the `config.yml` file in the `~/.layerform` directory.
 
 ```yaml
 currentContext: example-context
@@ -65,7 +61,7 @@ Layerform should always have its own bucket for storing layer states and definit
 
 </Warning>
 
-Once you have configured the `layerform` provider to use an S3 bucket as back-end, just run `terraform apply` again and you'll see that the configured bucket will now have a `json` file containing layer definitions.
+Once you have configured the `layerform` provider to use an S3 bucket as back-end, every time you run `layerform configure` again, you'll update the layer definitions in the bucket.
 
 Now, whoever uses `layerform spawn` to create a layer will use definitions within the S3 bucket. That way, you'll ensure everyone in the team is spawning the latest version of your layers, as long as they have the same config file.
 
@@ -73,30 +69,3 @@ Now, whoever uses `layerform spawn` to create a layer will use definitions withi
     Whenever you update a layer, you can run `layerform configure` again to
     update the definitions in the cloud's S3 bucket.
 </Note>
-
-## Provisioning an S3 bucket using the provider
-
-<Warning>This feature is not publicly available yet.</Warning>
-
-To provision an S3 bucket, you must update the Layerform provider configuration in your Terraform file to include the name of the bucket in which Layerform should store layer definitions.
-
-```hcl
-provider "layerform" {
-    backend {
-        type   = "s3"
-        bucket = "layerform-bucket-example"
-        region = "us-east-1"
-    }
-}
-
-resource "layerform_layer_definition" "base_layer" {
-  name   = "base"
-  files = ["./eks.tf", "./eks/**"]
-}
-
-resource "layerform_layer_definition" "elastic_stack" {
-  name   = "elastic_stack"
-  files = ["./elastic_stack.tf", "./elastic_stack/**"]
-  dependencies = [base_layer.name]
-}
-```

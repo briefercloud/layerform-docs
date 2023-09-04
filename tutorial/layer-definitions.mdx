@@ -11,6 +11,12 @@ In this part of the tutorial you'll learn how to create your first layer definit
 
 First, we'll create a base layer definition for our Kubernetes cluster. Then, we'll create a layer definition containing Kibana and Elasticsearch pods to go on top of base layer instances.
 
+Before we start, make sure to install the `layerform` CLI.
+
+```
+$ go install github.com/ergomake/layerform@latest
+```
+
 ## Creating a base layer definition
 
 To create a layer you must first create the Terraform files that belong to it. Then, you must use a `layerform_layer_definition` resource to be able to provision a layer definition.
@@ -142,7 +148,7 @@ module "eks" "my_cluster" {
     default_pool = {
       name = "default-pool"
       ami_type       = "AL2_x86_64"
-      instance_types = ["t2.micro"]
+      instance_types = ["t3.large"]
       min_size     = 1
       max_size     = 2
       desired_size = 1
@@ -196,10 +202,10 @@ module "eks" {
 
 ### Creating the base layer's definition
 
-To create a `layerform_layer_definition`, create a `main.tf` file outside the `layerform` folder. You'll use this file to provision the `layerform_layer_definition` resources using the Layerform provider.
+To create a layer definition, create a `layerform.json` file in your project's root folder. You'll use this file to store all layer definitions.
 
 ```hcl
-main.tf <--- You'll use this file to provision layers
+layerform.json
 layerform/
 ├─ eks/
 │ ├─ eks.tf
@@ -208,34 +214,47 @@ layerform/
 └─ eks.tf
 ```
 
-Within the `main.tf` file, declare the Layerform provider and add a `layerform_layer_definition` resource for the `base` layer. This layer has a name `base` and a list of files which includes all files within the `eks` folder and the outer `eks.tf` file, which instantiates the module.
+Within that file, create an object within the root key `layers`. This layer has a name `base` and a list of files which includes all files within the `eks` folder and the outer `eks.tf` file, which instantiates the module.
 
 ```hcl
-provider "layerform" {}
-
-resource "layerform_layer_definition" "base_layer" {
-  name   = "base"
-  files = ["./eks.tf", "./eks/**"]
+{
+    "layers": [
+        {
+            "name": "base",
+            "files": [ "./eks.tf", "./eks/**" ],
+        }
+    ]
 }
 ```
 
-Now, run `terraform apply` in the outermost folder to create a layer definition in your machine.
+Now, configure the back-end in which this layer will be stored.
+
+```yaml
+currentContext: my-local-context
+contexts:
+    my-local-context:
+        type: local
+        # Make sure to create this folder
+        dir: /Users/someone/project-layers
+```
+
+Now, run `layerform configure` in the outermost folder to create a layer definition in your machine.
 
 <Note>
-    The file containing the actual layer definition will be saved in the current
-    working directory from which you ran the `terraform apply` command.
+    The file containing the actual layer definition will be saved in the
+    directory specified in your back-end.
 </Note>
 
 ## Creating a layer definition for Kibana and Elasticsearch
 
-To create a layer definition for Kibana and Elasticsearch pods, we'll follow a similar process. First, we'll create a Terraform module and a file declaring it. Then, we'll create a `layerform_layer_definition` resource and `terraform apply` it.
+To create a layer definition for Kibana and Elasticsearch pods, we'll follow a similar process. First, we'll create a Terraform module and a file declaring it. Then, we'll create a layer entry in `layerform.json`.
 
 ### Creating Terraform files for the Kibana and Elasticsearch layer
 
 Start by creating an `inputs.tf` file to receive the EKS `cluster_id` you'll use to configure the Kubernetes provider.
 
 ```
-main.tf
+layerform.json
 layerform/
 ├─ elastic_stack/ <--- Kibana and Elasticsearch terraform files go here
 │ └─ inputs.tf
@@ -287,7 +306,7 @@ provider "kubernetes" {
 Then, create a `pods.tf` file in which you'll create a namespace for the Kibana and Elasticsearch pods and the pods themselves.
 
 ```
-main.tf
+layerform.json
 layerform/
 ├─ elastic_stack/
 │ ├─ pods.tf <--- your namespace and pods go here
@@ -362,7 +381,7 @@ resource "kubernetes_pod" "kibana" {
 Finally, you should go ahead and create an `elastic_stack.tf` file in the `layerform` folder which declares the module passing the necessary `cluster_id` variables to it.
 
 ```
-main.tf
+layerform.json
 layerform/
 ├─ elastic_stack/
 │ ├─ pods.tf
@@ -394,25 +413,29 @@ On the other hand, you _can't_ use values from layers above in the layers below.
 
 ### Creating the actual layer definition for Kibana and Elasticsearch
 
-Within the existing `main.tf` file, add a `layerform_layer_definition` resource for the `elastic_stack` layer. This layer has the name `elastic_stack` and a list of files which includes all files within the `elastic_stack` folder and the outer `elastic_stack.tf` file, which instantiates the module. This resource should also include a list of dependencies in which you specify that any instances of the `elastic_stack` layer depend on an instance of the `base` layer.
+Now, update your `layerform.json` to include a layer definition entry for the `elastic_stack` layer. This layer depends on `base` and contains the Terraform files in the `elastic_stack` folder as well as `elastic_stack.tf`.
 
-```hcl
-provider "layerform" {}
-
-resource "layerform_layer_definition" "base_layer" {
-  name   = "base"
-  files = ["./eks.tf", "./eks/**"]
-}
-
-resource "layerform_layer_definition" "elastic_stack" {
-  name   = "elastic_stack"
-  files = ["./elastic_stack.tf", "./elastic_stack/**"]
-  dependencies = [base_layer.name]
+```json
+{
+    "layers": [
+        {
+            "name": "base",
+            "files": ["./layerform/eks.tf", "./layerform/eks/**"]
+        },
+        {
+            "name": "elastic_stack",
+            "files": [
+                "./layerform/elastic_stack.tf",
+                "./layerform/elastic_stack/**"
+            ],
+            "dependencies": ["base"]
+        }
+    ]
 }
 ```
 
-Finally, run `terraform apply` again to update your `json` file with layer definitions so that it includes the `elastic_stack` layer definition.
+Finally, run `layerform configure` again to update your `json` definitions in the back-end.
 
 ## Testing your Terraform files
 
-The files you just created are just plain Terraform files. Therefore, they should work just fine if you use `terraform apply` within the `layerform folder` — as long as you have also run `terraform init`.
+The files you just created are just plain Terraform files. Therefore, they should work just fine if you use `terraform apply` with a `main.tf` file that instantiates both module's layers.

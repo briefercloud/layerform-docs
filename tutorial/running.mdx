@@ -9,39 +9,6 @@ description: "Learn how to run the development infrastructure for the Elastic St
 
 In this final part of the tutorial you'll learn how to run the dev infrastructure for your Elastic Stack.
 
-For that, you'll need to first learn how to set your CLI context so it know where to pull definitions from. Then, you'll have to run `layerform spawn` to create your environment.
-
-Before we start, make sure you have installed the CLI using `go install`, as shown below.
-
-```
-$ go install github.com/ergomake/layerform@latest
-```
-
-## Configuring your CLI context
-
-Your CLI context is the place it pulls configurations from — the desired back-end.
-
-In the last part of our tutorial, we've used an S3 bucket as the back-end for our layer definitions and state. Therefore, developers in your team should configure their Layerform CLI to pull configurations from that same bucket.
-
-For that, they must update their `config.yaml` file within the `.layerform` folder in their `home` folder.
-
-```
-$ vim ~/.layerform/config.yaml
-```
-
-Within that file, you should create a context with the `type` `s3` and give it a name. Then, you should use that name for as the `currentContext`.
-
-```yaml
-currentContext: tutorial-context
-contexts:
-    tutorial-context:
-        type: s3
-        bucket: layerform-bucket-example
-        region: us-east-1
-```
-
-After that, your CLI will pull state and layer definitions from the `layerform-bucket-example`, which is the back-end you provisioned in the previous part of the tutorial.
-
 ## Running a brand new environment with an Elastic Stack
 
 You can use `layerform spawn elastic_stack my_layer` to spawn an instance of the `elastic_stack` layer whose ID is `my_layer`.
@@ -80,3 +47,9 @@ To actually destroy the `base` layer with ID `default`, you must first destroy `
 ![](../images/layer_example4.png)
 
 Only then you can run `layerform kill base default`.
+
+## Using layers within a team
+
+To use layers within a team, you must ensure that everyone in your team has configured their Layerform CLI to use the same back-end. That way, everyone will pull definitions from the same back-end. Additionally, they'll upload layer states there so that everyone in the team can see which layers exist.
+
+For that, make sure to tell everyone to update their `~/.layerform/config` file and use the same back-end. Make sure to also give everyone permissions to read and write from that bucket, and [have their AWS credentials configured in their machines](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html).
