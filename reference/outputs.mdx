@@ -1,0 +1,76 @@
+---
+title: "Outputs"
+description: "Learn how to fetch values from layer definitions"
+icon: "file-export"
+---
+
+You should use outputs to fetch values from layer instances. For example, if your layer spins up an Elasticsearch and Kibana instance, your layer's Terraform files will usually include outputs the URLs for both of them, as shown below.
+
+```hcl
+output "elasticsearch_url" {
+  description = "Elasticsearch URL"
+  value       = local.elasticsearch_url
+}
+
+output "kibana_url" {
+  description = "Kibana URL"
+  value       = "${local.namespace}.environment.ergomake.link"
+}
+```
+
+These outputs will show up when you run `layerform output <layer_definition> <intance_name>`.
+
+```
+$ layerform output elasticstack aabhas
+{
+  "elasticsearch_url": {
+    "sensitive": false,
+    "type": "string",
+    "value": "example-es-for-docs.environment.ergomake.link"
+  },
+  "kibana_url": {
+    "sensitive": false,
+    "type": "string",
+    "value": "example-kibana-for-docs.environment.ergomake.link"
+  }
+}
+```
+
+It's through those outputs that you'll be able to configure your local development instances to point to remote resources.
+
+If you were developing Kibana, for example, you'd use the `elasticsearch_url` in your local Kibana's configuration to point to the remote Elasticsearch. You could also have outputs for Elasticsearch's username and password.
+
+```yml
+# kibana.yml
+
+# This is the URL for ES
+elasticsearch.hosts: ["http/example-es-for-docs.environment.ergomake.link"]
+```
+
+## Using templates
+
+Instead of manually filling your application's configuration files with these values, you could render outputs to templates using the `--template` flag.
+
+Assume you have the following `kibana-template.yml` file, for example.
+
+```yml
+elasticsearch.hosts: ["http://{{elasticsearch_url.value}}"]
+```
+
+This file uses [a Mustache template](https://mustache.github.io/) within the `elasticsearch.hosts` value.
+
+You can fill this value by using `layerform output <layer_name> <instance_name> --template kibana-template.yml`. That way, you can get a rendered file with all outputs filled in.
+
+```
+$ layerform output elasticstack example --template config/kibana-template.yml
+
+elasticsearch.hosts: ['http://example-es-for-docs.environment.ergomake.link']
+```
+
+The templating feature makes it much easier to configure local apps to point to remote environments.
+
+<Info>
+    Next on the roadmap are features to make it easier for you to impersonate
+    pods within your Kubernetes cluster, so you can more easily simulate your
+    local code running _within_ a pod.
+</Info>
