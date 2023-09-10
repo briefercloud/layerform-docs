@@ -19,7 +19,7 @@ $ go install github.com/ergomake/layerform@latest
 
 ## Creating a base layer definition
 
-To create a layer you must first create the Terraform files that belong to it. Then, you must use a `layerform_layer_definition` resource to be able to provision a layer definition.
+To create a layer you must first create the Terraform files that belong to it. Then, you must a JSON file called `layerform.json` to be able to provision a layer definition.
 
 ### Creating the base layer's Terraform files
 
@@ -199,6 +199,13 @@ module "eks" {
     source = "./modules/eks"
 }
 ```
+
+<Note>
+It's up to you to define how you want this EKS cluster to be accessible.
+
+To make these examples work without too much effort, I recommend exposing services to the world using a `NodePort` or configuring `nginx-ingress-controller` so that your instances get an URL when you write an ingress for them in your Terraform files.
+
+</Note>
 
 ### Creating the base layer's definition
 
