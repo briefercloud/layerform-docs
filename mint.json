@@ -67,6 +67,7 @@
                 "reference/backends",
                 "reference/creating_and_deleting",
                 "reference/cli_configs",
+                "reference/managing_layers",
                 "reference/outputs",
                 "reference/inner_workings"
             ]

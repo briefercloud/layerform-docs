@@ -1,0 +1,27 @@
+---
+title: "Listing definitions and instances"
+description: "Learn how to list layer instances and definitions."
+icon: "list-check"
+---
+
+You can list definitions and instances using `layerform list definitions` and `layerform list instances`, respectively.
+
+Listing definitions is useful usually after you have provisioned layers using `layerform configure`. By listing layers, you'll be able to confirm that all of them have been provisioned correctly. Additionally, all developers that list definitions will understand which layers are available to them, and what are each layer's dependencies.
+
+```
+$ layerform list definitions
+
+NAME          DEPENDENCIES
+eks
+elasticstack  eks
+```
+
+Listing layer instances is useful after spawning or killing a layer. By listing instances you'll be able to see whether the `spawn` or `kill` commands worked, and what is the layer's state.
+
+```
+$ layerform list instances
+
+INSTANCE NAME  LAYER NAME    DEPENDENCIES STATUS
+default        eks                        alive
+example        elasticstack  eks=default  alive
+```
